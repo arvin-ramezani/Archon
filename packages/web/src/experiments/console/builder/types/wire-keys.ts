@@ -27,6 +27,7 @@ export const WIRE_KEY_ROLES = {
   when: 'base',
   trigger_rule: 'base',
   model: 'base',
+  model_guard: 'base',
   provider: 'base',
   context: 'base',
   output_format: 'base',

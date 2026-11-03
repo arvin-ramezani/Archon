@@ -12,8 +12,9 @@ description: |
   draft PR for this branch".
   NOT for: implementing (implement), reviewing (review), or merging (always human).
 
-model: medium
 
+model_policy:
+  require_node_guards: true
 inputs:
   draft:
     default: "true"
@@ -53,6 +54,9 @@ nodes:
   # the run continues an existing pull request, and what the title and body say.
   # It performs no push and no forge write.
   - id: prepare
+    model: '@imarvin-luna-high'
+    effort: high
+    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
     command: pr
     depends_on: [forge]
     with:

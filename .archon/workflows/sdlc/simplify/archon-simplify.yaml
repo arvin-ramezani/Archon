@@ -10,8 +10,9 @@ description: |
   review".
   NOT for: correctness (review), fixing findings (implement), or writing code.
 
-model: medium
 
+model_policy:
+  require_node_guards: true
 inputs:
   work_order:
     default: ""
@@ -22,6 +23,9 @@ returns: simplify
 
 nodes:
   - id: simplify
+    model: '@imarvin-luna-high'
+    effort: high
+    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
     output_type: structure-review
     command: simplify
     context: fresh

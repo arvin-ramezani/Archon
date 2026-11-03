@@ -10,6 +10,8 @@ description: |
   stage and owns what follows its ending. It never pauses for a person: run
   archon-ship, which adds that pause, by hand.
 
+model_policy:
+  require_node_guards: true
 inputs:
   target:
     default: ""
@@ -89,8 +91,10 @@ nodes:
   # config; until one is named here it judges relevance and reports that no
   # source is connected when data would have mattered.
   - id: intel
+    model: '@imarvin-luna-high'
+    effort: high
+    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
     command: intel
-    model: medium
     mutates_checkout: false
     depends_on: [triage]
     when: "$triage.output.route == 'plan'"

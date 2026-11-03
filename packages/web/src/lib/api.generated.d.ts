@@ -4133,6 +4133,10 @@ export interface components {
       evidence_policy?: {
         required: boolean;
       };
+      model_policy?: {
+        /** @enum {boolean} */
+        require_node_guards: true;
+      };
       mutates_checkout?: boolean;
       persist_sessions?: boolean;
       tags?: string[];
@@ -4159,6 +4163,13 @@ export interface components {
       /** @enum {string} */
       trigger_rule?: 'all_success' | 'one_success' | 'none_failed_min_one_success' | 'all_done';
       model?: string;
+      model_guard?: {
+        ref: string;
+        provider: string;
+        model: string;
+        /** @enum {string} */
+        effort: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultra' | 'persistent';
+      };
       provider?: string;
       context?:
         | ('fresh' | 'shared')

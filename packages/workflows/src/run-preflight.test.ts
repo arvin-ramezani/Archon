@@ -74,6 +74,124 @@ function fixture(status: CredentialStatus = { state: 'not_checked', source: 'nat
 }
 
 describe('run credential preflight', () => {
+  const lunaAlias = '@imarvin-luna-high';
+  const solAlias = '@imarvin-planning';
+
+  function guardedWorkflow(ref: string, effort: 'medium' | 'high' = 'high') {
+    const expected =
+      ref === solAlias
+        ? { provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' as const }
+        : { provider: 'codex', model: 'gpt-6-luna', effort: 'high' as const };
+    return makeTestResolvedWorkflow({
+      name: 'guarded',
+      model_policy: { require_node_guards: true },
+      nodes: [
+        {
+          id: 'ai',
+          command: 'test-command',
+          model: ref,
+          effort,
+          model_guard: { ref, ...expected },
+        },
+      ],
+    });
+  }
+
+  test('accepts the approved alias only when its resolved provider, model and effort match', async () => {
+    const { deps } = fixture();
+    deps.loadConfig.mockResolvedValue({
+      ...config,
+      assistant: 'codex',
+      aliases: {
+        [lunaAlias]: { provider: 'codex', model: 'gpt-6-luna', effort: 'high' },
+      },
+    });
+    const prepared = await prepareRunAiConfiguration(deps, guardedWorkflow(lunaAlias), '/p');
+    expect(prepared.requirements).toEqual([
+      { provider: 'codex', model: 'gpt-6-luna', vendor: 'openai' },
+    ]);
+  });
+
+  test('accepts the Sol Medium planning route', async () => {
+    const { deps } = fixture();
+    deps.loadConfig.mockResolvedValue({
+      ...config,
+      assistant: 'codex',
+      aliases: {
+        [solAlias]: { provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' },
+      },
+    });
+    const prepared = await prepareRunAiConfiguration(
+      deps,
+      guardedWorkflow(solAlias, 'medium'),
+      '/p'
+    );
+    expect(prepared.requirements).toEqual([
+      { provider: 'codex', model: 'gpt-6.1-sol', vendor: 'openai' },
+    ]);
+  });
+
+  test('fails before credential checks when a guarded alias is missing', async () => {
+    const { deps, checkCredential } = fixture();
+    deps.loadConfig.mockResolvedValue({ ...config, assistant: 'codex', aliases: {} });
+    await expect(prepareRunAiConfiguration(deps, guardedWorkflow(lunaAlias), '/p')).rejects.toThrow(
+      /Model routing preflight failed.*Unknown alias '@imarvin-luna-high'/
+    );
+    expect(checkCredential).not.toHaveBeenCalled();
+  });
+
+  test('rejects an unexpected Astra resolution before credential checks', async () => {
+    const { deps, checkCredential } = fixture();
+    deps.loadConfig.mockResolvedValue({
+      ...config,
+      assistant: 'codex',
+      aliases: {
+        [lunaAlias]: { provider: 'codex', model: 'gpt-6-astra', effort: 'high' as const },
+      },
+    });
+    await expect(prepareRunAiConfiguration(deps, guardedWorkflow(lunaAlias), '/p')).rejects.toThrow(
+      /configured @imarvin-luna-high resolves to codex\/gpt-6-astra at high; expected codex\/gpt-6-luna at high/
+    );
+    expect(checkCredential).not.toHaveBeenCalled();
+  });
+
+  test('rejects a higher-precedence user alias override that violates the route', async () => {
+    const { deps, checkCredential } = fixture();
+    deps.loadConfig.mockResolvedValue({
+      ...config,
+      assistant: 'codex',
+      aliases: {
+        [lunaAlias]: { provider: 'codex', model: 'gpt-6-luna', effort: 'high' },
+      },
+    });
+    const getUserAiPrefs = mock(async () => ({
+      aliases: {
+        [lunaAlias]: { provider: 'codex', model: 'gpt-6-astra', effort: 'high' as const },
+      },
+    }));
+    await expect(
+      prepareRunAiConfiguration({ ...deps, getUserAiPrefs }, guardedWorkflow(lunaAlias), '/p', {
+        userId: 'user',
+      })
+    ).rejects.toThrow(/configured @imarvin-luna-high resolves to codex\/gpt-6-astra at high/);
+    expect(checkCredential).not.toHaveBeenCalled();
+  });
+
+  test('rejects a model effort mismatch rather than silently changing reasoning depth', async () => {
+    const { deps, checkCredential } = fixture();
+    deps.loadConfig.mockResolvedValue({
+      ...config,
+      assistant: 'codex',
+      aliases: {
+        [lunaAlias]: { provider: 'codex', model: 'gpt-6-luna', effort: 'medium' },
+      },
+    });
+    await expect(prepareRunAiConfiguration(deps, guardedWorkflow(lunaAlias), '/p')).rejects.toThrow(
+      /configured @imarvin-luna-high resolves to codex\/gpt-6-luna at medium; expected codex\/gpt-6-luna at high/
+    );
+    expect(checkCredential).not.toHaveBeenCalled();
+  });
+
   test('enumerates actual aliases, loop scopes and conditional nodes, excluding coordination nodes', async () => {
     const workflow = makeTestResolvedWorkflow({
       name: 'graph',

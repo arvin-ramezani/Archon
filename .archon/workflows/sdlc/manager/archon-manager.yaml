@@ -10,8 +10,9 @@ description: |
   Use when: on a slower schedule than archon-loop (every few hours), or when the
   loop stops making progress.
   NOT for: writing product code.
-model: large
 
+model_policy:
+  require_node_guards: true
 inputs:
   runtime:
     default: >-
@@ -37,6 +38,9 @@ nodes:
     runtime: bun
 
   - id: manage
+    model: '@imarvin-luna-high'
+    effort: high
+    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
     command: manage
     context: fresh
     idle_timeout: 2700000

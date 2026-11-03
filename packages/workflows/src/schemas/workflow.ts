@@ -127,6 +127,13 @@ export const workflowEvidencePolicySchema = z.object({
 
 export type WorkflowEvidencePolicy = z.infer<typeof workflowEvidencePolicySchema>;
 
+/** Require each AI node in the resolved workflow composition to declare a model_guard. */
+export const workflowModelPolicySchema = z
+  .object({ require_node_guards: z.literal(true) })
+  .strict();
+
+export type WorkflowModelPolicy = z.infer<typeof workflowModelPolicySchema>;
+
 // ---------------------------------------------------------------------------
 // Workflow signature — declared inputs (#2470, Signature Phase 2)
 // ---------------------------------------------------------------------------
@@ -208,6 +215,7 @@ export const workflowBaseSchema = z.object({
   worktree: workflowWorktreePolicySchema.optional(),
   container: workflowContainerPolicySchema.optional(),
   evidence_policy: workflowEvidencePolicySchema.optional(),
+  model_policy: workflowModelPolicySchema.optional(),
   /**
    * When `false`, the engine skips the path-exclusive lock for this workflow,
    * allowing N concurrent runs on the same live checkout. The author asserts
@@ -352,6 +360,7 @@ export const KNOWN_WORKFLOW_NESTED_KEYS: ReadonlyMap<string, NestedKeySpec> = ne
     'evidence_policy',
     { kind: 'object', keys: new Set(Object.keys(workflowEvidencePolicySchema.shape)) },
   ],
+  ['model_policy', { kind: 'object', keys: new Set(Object.keys(workflowModelPolicySchema.shape)) }],
   ['deprecated', { kind: 'object', keys: new Set(Object.keys(workflowDeprecationSchema.shape)) }],
   // First `record` entry in this map: `inputs` is a record of input-name → spec,
   // so unknown keys under an individual spec (e.g. `inputs.diff.typo`) warn.

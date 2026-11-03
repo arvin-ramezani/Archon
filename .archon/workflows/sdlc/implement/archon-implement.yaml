@@ -9,8 +9,9 @@ description: |
   "apply these review findings", "build what this describes", "fix this CI failure".
   NOT for: deciding what to build, reviewing changes, or opening a PR.
 
-model: large
 
+model_policy:
+  require_node_guards: true
 inputs:
   work:
     default: ""
@@ -31,6 +32,9 @@ nodes:
   # Each turn is a fresh session: work that continues past a seam is carried by its
   # commits and implementation.md, never by a conversation that grows with the work.
   - id: implement
+    model: '@imarvin-luna-high'
+    effort: high
+    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
     loop:
       command: implement
       until_field: done

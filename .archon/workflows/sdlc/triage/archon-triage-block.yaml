@@ -12,8 +12,9 @@ description: |
   stage and owns what follows its ending. It never pauses for a person: run
   archon-triage, which adds that pause, by hand.
 
-model: medium
 
+model_policy:
+  require_node_guards: true
 inputs:
   target:
     default: ""
@@ -45,6 +46,9 @@ nodes:
       required: [defaults]
 
   - id: triage
+    model: '@imarvin-luna-high'
+    effort: high
+    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
     command: triage
     depends_on: [policy]
     with:

@@ -87,6 +87,7 @@ export {
   TRIGGER_RULES,
   dagNodeBaseSchema,
   nodeContextSchema,
+  modelGuardSchema,
   promptSourceSchema,
   agentNodeSchema,
   execNodeSchema,
@@ -178,6 +179,7 @@ export type {
   SandboxSettings,
   AgentDefinition,
   PiNodeConfig,
+  ModelGuard,
   NestedKeySpec,
 } from './dag-node';
 
@@ -187,6 +189,7 @@ export {
   webSearchModeSchema,
   workflowRequirementSchema,
   workflowEvidencePolicySchema,
+  workflowModelPolicySchema,
   workflowInputSpecSchema,
   workflowBaseSchema,
   workflowDefinitionSchema,
@@ -199,6 +202,7 @@ export type {
   WebSearchMode,
   WorkflowRequirement,
   WorkflowEvidencePolicy,
+  WorkflowModelPolicy,
   WorkflowInputSpec,
   WorkflowBase,
   WorkflowDefinition,

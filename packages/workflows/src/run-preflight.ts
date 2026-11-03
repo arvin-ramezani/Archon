@@ -184,6 +184,7 @@ export async function prepareRunAiConfiguration(
         .map(p => p.id)
         .join(', ')}`
     );
+  assertNodeModelGuards(workflow, config, scope, aiProfile);
   const unresolved = collectRunCredentialRequirements(deps.providers, workflow, {
     config,
     aiProfile,
@@ -254,6 +255,85 @@ export interface RunCredentialRequirement {
   provider: string;
   model?: string;
   vendor?: string;
+}
+
+function assertNodeModelGuards(
+  workflow: ResolvedWorkflow,
+  config: WorkflowConfig,
+  scope: WorkflowModelScope,
+  aiProfile: ResolvedAiProfile
+): void {
+  const assistantModels = assistantModelDefaults(config);
+  const visit = (nodes: readonly DagNode[], currentScope: WorkflowModelScope): void => {
+    for (const node of nodes) {
+      const agent = isAgentNode(node) || isLoopNode(node);
+      const group = isLoopGroupNode(node);
+      const guard = node.model_guard;
+      if (guard && !agent) {
+        throw new Error(
+          `Model routing preflight failed for workflow '${workflow.name}', node '${node.id}': model_guard is only valid on an AI node.`
+        );
+      }
+      if (workflow.model_policy?.require_node_guards && agent && !guard) {
+        throw new Error(
+          `Model routing preflight failed for workflow '${workflow.name}', node '${node.id}': required model_guard is missing.`
+        );
+      }
+      if (!agent && !group) continue;
+
+      let resolved: ReturnType<typeof resolveNodeModel>;
+      try {
+        resolved = resolveNodeModel(node, currentScope, assistantModels, aiProfile);
+      } catch (error) {
+        if (!guard) throw error;
+        throw new Error(
+          `Model routing preflight failed for workflow '${workflow.name}', node '${node.id}': ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+      if (guard) {
+        if (node.model !== guard.ref) {
+          throw new Error(
+            `Model routing preflight failed for workflow '${workflow.name}', node '${node.id}': model must reference '${guard.ref}'.`
+          );
+        }
+        const actual = `${resolved.provider}/${resolved.model ?? '<unset>'} at ${resolved.effort ?? '<unset>'}`;
+        const expected = `${guard.provider}/${guard.model} at ${guard.effort}`;
+        const binding = aiProfile.aliases[guard.ref];
+        const configured = binding
+          ? `${binding.provider}/${binding.model} at ${binding.effort ?? '<unset>'}`
+          : '<missing>';
+        if (
+          binding?.provider !== guard.provider ||
+          binding?.model !== guard.model ||
+          binding?.effort !== guard.effort
+        ) {
+          throw new Error(
+            `Model routing preflight failed for workflow '${workflow.name}', node '${node.id}': configured ${guard.ref} resolves to ${configured}; expected ${expected}.`
+          );
+        }
+        if (
+          resolved.provider !== guard.provider ||
+          resolved.model !== guard.model ||
+          resolved.effort !== guard.effort
+        ) {
+          throw new Error(
+            `Model routing preflight failed for workflow '${workflow.name}', node '${node.id}': resolved ${actual}; expected ${guard.ref} → ${expected}.`
+          );
+        }
+      }
+      if (isLoopGroupNode(node)) {
+        visit(resolvedBodyNodes(node.loop_group), {
+          ...currentScope,
+          provider: resolved.provider,
+          model: resolved.model,
+          preset: resolved.preset,
+          tier: resolved.tier,
+          providerOrigin: resolved.providerOrigin,
+        });
+      }
+    }
+  };
+  visit(workflow.nodes, scope);
 }
 
 export function collectRunCredentialRequirements(
