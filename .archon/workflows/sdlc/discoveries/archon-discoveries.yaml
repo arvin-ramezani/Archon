@@ -41,9 +41,9 @@ nodes:
       run_id: "$INPUTS.run_id"
 
   - id: revalidate
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: revalidate
     mutates_checkout: false
     allowed_tools: [Read, Grep, Glob, Bash]
@@ -88,9 +88,9 @@ nodes:
       revalidation: "$revalidate.output.entries"
 
   - id: search-existing
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: search-existing
     mutates_checkout: false
     allowed_tools: [Read, Grep, Glob, Bash]
@@ -120,9 +120,9 @@ nodes:
     depends_on: [check-evidence]
 
   - id: classify
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: classify
     mutates_checkout: false
     allowed_tools: [Read]
@@ -184,9 +184,9 @@ nodes:
           label: Keep local
 
   - id: publish
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: publish-discoveries
     context: fresh
     mutates_checkout: false

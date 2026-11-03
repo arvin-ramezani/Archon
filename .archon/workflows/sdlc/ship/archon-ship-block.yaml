@@ -91,9 +91,9 @@ nodes:
   # config; until one is named here it judges relevance and reports that no
   # source is connected when data would have mattered.
   - id: intel
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: intel
     mutates_checkout: false
     depends_on: [triage]

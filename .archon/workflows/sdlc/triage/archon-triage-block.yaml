@@ -46,9 +46,9 @@ nodes:
       required: [defaults]
 
   - id: triage
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: triage
     depends_on: [policy]
     with:

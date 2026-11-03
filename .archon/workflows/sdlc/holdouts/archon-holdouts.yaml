@@ -32,9 +32,9 @@ nodes:
     runtime: bun
 
   - id: write
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     depends_on: [briefs]
     context: fresh
     idle_timeout: 2700000

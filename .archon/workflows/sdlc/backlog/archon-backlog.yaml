@@ -40,9 +40,9 @@ nodes:
   # The one judgment node. Large tier: slicing a product into the right first
   # ticket is planning, not routine work.
   - id: slice
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: slice-backlog
     depends_on: [read-prd]
     mutates_checkout: false
@@ -83,9 +83,9 @@ nodes:
           label: Keep it local
 
   - id: publish
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: publish-backlog
     context: fresh
     mutates_checkout: false

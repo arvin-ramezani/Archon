@@ -150,9 +150,9 @@ nodes:
     bash: mkdir -p "$ARTIFACTS_DIR/review"
 
   - id: scope
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: review-scope
     context: fresh
     mutates_checkout: false
@@ -196,9 +196,9 @@ nodes:
   # lens choices as prose and claimed it had called the structured-output tool, failing the
   # node and skipping every lens of the delivery's review.
   - id: route
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: route-review
     context: fresh
     mutates_checkout: false
@@ -221,9 +221,9 @@ nodes:
   # mislead the others. `&&` binds tighter than `||` and short-circuits, so a
   # light round, which skips the route node, never reads it.
   - id: seams
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     output_type: review-lens
     command: review-seams
     context: fresh
@@ -234,9 +234,9 @@ nodes:
     when: "$scope.output.head_matches == true && $mode.output.light == false && $route.output.seams == true || $scope.output.head_matches == true && $mode.output.seams == true"
 
   - id: code
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     output_type: review-lens
     command: review-code
     context: fresh
@@ -246,9 +246,9 @@ nodes:
     when: "$scope.output.head_matches == true && $mode.output.light == false && $route.output.code == true || $scope.output.head_matches == true && $mode.output.code == true"
 
   - id: tests
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     output_type: review-lens
     command: review-tests
     context: fresh
@@ -258,9 +258,9 @@ nodes:
     when: "$scope.output.head_matches == true && $mode.output.light == false && $route.output.tests == true || $scope.output.head_matches == true && $mode.output.tests == true"
 
   - id: errors
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     output_type: review-lens
     command: review-errors
     context: fresh
@@ -270,9 +270,9 @@ nodes:
     when: "$scope.output.head_matches == true && $mode.output.light == false && $route.output.errors == true || $scope.output.head_matches == true && $mode.output.errors == true"
 
   - id: docs
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     output_type: review-lens
     command: review-docs
     context: fresh
@@ -309,9 +309,9 @@ nodes:
   # boundary — but nothing has measured it as better than the in-prompt pass, so
   # it stays here until something does.
   - id: synthesize
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: review-synthesize
     context: fresh
     mutates_checkout: false

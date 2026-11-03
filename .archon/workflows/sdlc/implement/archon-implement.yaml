@@ -32,9 +32,9 @@ nodes:
   # Each turn is a fresh session: work that continues past a seam is carried by its
   # commits and implementation.md, never by a conversation that grows with the work.
   - id: implement
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     loop:
       command: implement
       until_field: done

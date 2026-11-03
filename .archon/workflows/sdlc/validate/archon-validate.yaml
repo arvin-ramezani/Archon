@@ -110,9 +110,9 @@ nodes:
   # script node runs for as long as its own `timeout:` allows. Judging why a
   # check failed is judgement again, so only a red run reaches an agent.
   - id: discover
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: discover-checks
     depends_on: [applicability]
     when: "$applicability.output.reuse == false"
@@ -158,9 +158,9 @@ nodes:
       required: [status, summary]
 
   - id: classify
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: classify-red
     depends_on: [run]
     when: "$run.output.status == 'red'"

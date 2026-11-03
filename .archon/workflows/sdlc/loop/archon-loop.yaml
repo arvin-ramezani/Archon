@@ -70,9 +70,9 @@ nodes:
   # Choose one move and how to build it. `none` is a real route, so every later
   # `when:` can read this node's fields: it always runs.
   - id: pick
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: loop-pick
     context: fresh
     idle_timeout: 2700000
@@ -117,9 +117,9 @@ nodes:
 
   # Contained work and finishing an open pull request: the in-loop builder.
   - id: build
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: loop-work
     context: fresh
     idle_timeout: 2700000
@@ -182,9 +182,9 @@ nodes:
     depends_on: [subject]
 
   - id: check-app
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: loop-check-app
     context: fresh
     idle_timeout: 2700000
@@ -272,9 +272,9 @@ nodes:
       evidence_problems: "$evidence.output.problems"
 
   - id: review
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: loop-review
     context: fresh
     idle_timeout: 2700000

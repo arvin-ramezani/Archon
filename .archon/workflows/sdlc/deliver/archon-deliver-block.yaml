@@ -234,9 +234,9 @@ nodes:
         # judged the threads the previous round read; this agent checks each
         # disposition at the head and writes the reply each settled thread gets.
         - id: settle-threads
-          model: '@imarvin-luna-high'
+          model: large
           effort: high
-          model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+          model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
           command: settle-threads
           context: fresh
           mutates_checkout: false
@@ -263,9 +263,9 @@ nodes:
         # CI is the project's full validation: implementers run only focused checks.
         # Fresh: CI reads the PR, not simplify's or reshape's conversation.
         - id: ci
-          model: '@imarvin-luna-high'
+          model: large
           effort: high
-          model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+          model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
           command: ci
           context: fresh
           mutates_checkout: false
@@ -358,9 +358,9 @@ nodes:
   # only when nothing is left. It runs once the rounds have ended, never per round;
   # content a round prepared for the description is that round's pr step's write.
   - id: update-pr-body
-    model: '@imarvin-luna-high'
+    model: large
     effort: high
-    model_guard: { ref: '@imarvin-luna-high', provider: codex, model: gpt-6-luna, effort: high }
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: update-pr-body
     depends_on: [rounds]
     when: "$rounds.output.pr_url != ''"
