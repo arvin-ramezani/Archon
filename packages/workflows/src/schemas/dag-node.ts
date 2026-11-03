@@ -16,6 +16,7 @@ export { agentDefinitionSchema, type AgentDefinition } from '@archon/provider-co
 import { stepRetryConfigSchema } from './retry';
 import { MAX_DURABLE_WAIT_MS } from './durable-wait';
 import { effortLevelSchema, rejectRetiredThinking } from './effort';
+import { TIER_NAMES } from './model-binding';
 export { MAX_DURABLE_WAIT_MS } from './durable-wait';
 export { effortLevelSchema, EFFORT_LEVELS } from './effort';
 export type { EffortLevel } from './effort';
@@ -163,7 +164,7 @@ export type NodeContext = z.infer<typeof nodeContextSchema>;
 /** Exact resolved model contract a guarded AI node must satisfy before a run starts. */
 export const modelGuardSchema = z
   .object({
-    ref: z.string().startsWith('@'),
+    ref: z.union([z.string().startsWith('@'), z.enum(TIER_NAMES)]),
     provider: z.string().trim().min(1),
     model: z.string().trim().min(1),
     effort: effortLevelSchema,

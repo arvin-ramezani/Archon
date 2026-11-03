@@ -4164,7 +4164,7 @@ export interface components {
       trigger_rule?: 'all_success' | 'one_success' | 'none_failed_min_one_success' | 'all_done';
       model?: string;
       model_guard?: {
-        ref: string;
+        ref: string | ('small' | 'medium' | 'large');
         provider: string;
         model: string;
         /** @enum {string} */

@@ -31,11 +31,12 @@ function visit(nodes: WorkflowNode[], callback: (node: WorkflowNode) => void): v
 }
 
 describe('SDLC model routing', () => {
-  test('every model-using node has an explicit approved role route and no Astra/tier fallback', () => {
+  test('every model-using node has an explicit approved role tier and no Astra fallback', () => {
     const files = yamlFiles(workflowRoot);
     expect(files.length).toBeGreaterThan(0);
 
     for (const file of files) {
+      const normalizedFile = file.replaceAll('\\', '/');
       const workflow = Bun.YAML.parse(readFileSync(file, 'utf8')) as {
         model?: string;
         model_policy?: { require_node_guards?: boolean };
@@ -50,16 +51,17 @@ describe('SDLC model routing', () => {
       }
 
       for (const node of aiNodes) {
-        const planner = file.endsWith('plan/archon-plan-block.yaml') && node.id === 'plan';
+        const planner =
+          normalizedFile.endsWith('/plan/archon-plan-block.yaml') && node.id === 'plan';
         const expected = planner
           ? {
-              ref: '@imarvin-planning',
+              ref: 'medium',
               provider: 'codex',
               model: 'gpt-6.1-sol',
               effort: 'medium',
             }
           : {
-              ref: '@imarvin-luna-high',
+              ref: 'large',
               provider: 'codex',
               model: 'gpt-6-luna',
               effort: 'high',
@@ -67,7 +69,7 @@ describe('SDLC model routing', () => {
         expect(node.model, `${file}#${node.id}`).toBe(expected.ref);
         expect(node.effort, `${file}#${node.id}`).toBe(expected.effort);
         expect(node.model_guard, `${file}#${node.id}`).toEqual(expected);
-        expect(node.model, `${file}#${node.id}`).not.toMatch(/astra|^(small|medium|large)$/i);
+        expect(node.model_guard?.model, `${file}#${node.id}`).not.toMatch(/astra/i);
       }
 
       const visitDeterministic = (nodes: WorkflowNode[]) => {
