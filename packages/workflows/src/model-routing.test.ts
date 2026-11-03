@@ -52,7 +52,10 @@ describe('SDLC model routing', () => {
 
       for (const node of aiNodes) {
         const planner =
-          normalizedFile.endsWith('/plan/archon-plan-block.yaml') && node.id === 'plan';
+          (normalizedFile.endsWith('/plan/archon-plan-block.yaml') && node.id === 'plan') ||
+          (normalizedFile.endsWith('/backlog/archon-backlog.yaml') &&
+            node.id === 'slice' &&
+            node.command === 'slice-backlog');
         const expected = planner
           ? {
               ref: 'medium',

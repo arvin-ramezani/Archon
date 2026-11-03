@@ -1,6 +1,6 @@
 name: archon-backlog
 description: >-
-  Turn a product document into an ordered GitHub backlog. A large-tier planner
+  Turn a product document into an ordered GitHub backlog. A planning-tier model
   slices the PRD into tickets that each pass triage's contract test, with the
   first ticket making the product runnable end to end; a deterministic check
   validates the slice; publication uses gh with a dedup marker so re-running
@@ -37,12 +37,11 @@ nodes:
         max_issues: { type: integer }
       required: [path, characters, max_issues]
 
-  # The one judgment node. Large tier: slicing a product into the right first
-  # ticket is planning, not routine work.
+  # The one judgment node. Slicing a product into the right first ticket is planning.
   - id: slice
-    model: large
-    effort: high
-    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
+    model: medium
+    effort: medium
+    model_guard: { ref: medium, provider: codex, model: gpt-6.1-sol, effort: medium }
     command: slice-backlog
     depends_on: [read-prd]
     mutates_checkout: false

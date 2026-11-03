@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { providerRegistry } from '@archon/providers';
 import { beforeAll, describe, expect, mock, test } from 'bun:test';
 import { registerBuiltinProviders, registerCommunityProviders } from '@archon/providers/in-process';
@@ -8,7 +10,7 @@ import type {
   IAgentProvider,
 } from '@archon/providers/types';
 import type { WorkflowConfig } from './deps';
-import type { WorkflowRun } from './schemas';
+import type { DagNode, WorkflowRun } from './schemas';
 import { makeTestResolvedWorkflow, makeTestComposedWorkflow, makeTestWorkflow } from './test-utils';
 import {
   prepareRunAiConfiguration,
@@ -130,6 +132,39 @@ describe('run credential preflight', () => {
     expect(prepared.requirements).toEqual([
       { provider: 'codex', model: 'gpt-6.1-sol', vendor: 'openai' },
     ]);
+  });
+
+  test('rejects a Luna mapping for backlog slicing before checking credentials', async () => {
+    const sourcePath = resolve(
+      import.meta.dir,
+      '../../../.archon/workflows/sdlc/backlog/archon-backlog.yaml'
+    );
+    const workflowDefinition = Bun.YAML.parse(readFileSync(sourcePath, 'utf8')) as {
+      nodes: DagNode[];
+    };
+    const slice = workflowDefinition.nodes.find(
+      node => node.id === 'slice' && 'command' in node && node.command === 'slice-backlog'
+    );
+    expect(slice).toBeDefined();
+    const workflow = makeTestResolvedWorkflow({
+      name: 'archon-backlog',
+      model_policy: { require_node_guards: true },
+      nodes: [{ ...slice!, depends_on: [] }],
+    });
+    const { deps, checkCredential } = fixture();
+    deps.loadConfig.mockResolvedValue({
+      ...config,
+      assistant: 'codex',
+      tiers: {
+        medium: { provider: 'codex', model: 'gpt-6-luna', effort: 'high' },
+        large: { provider: 'codex', model: 'gpt-6-luna', effort: 'high' },
+      },
+    });
+
+    await expect(prepareRunAiConfiguration(deps, workflow, '/p')).rejects.toThrow(
+      /configured medium resolves to codex\/gpt-6-luna at high; expected codex\/gpt-6\.1-sol at medium/
+    );
+    expect(checkCredential).not.toHaveBeenCalled();
   });
 
   test('fails before credential checks when a guarded alias is missing', async () => {
