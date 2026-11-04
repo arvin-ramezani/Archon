@@ -16,6 +16,7 @@ export { agentDefinitionSchema, type AgentDefinition } from '@archon/provider-co
 import { stepRetryConfigSchema } from './retry';
 import { MAX_DURABLE_WAIT_MS } from './durable-wait';
 import { effortLevelSchema, rejectRetiredThinking } from './effort';
+import { TIER_NAMES } from './model-binding';
 export { MAX_DURABLE_WAIT_MS } from './durable-wait';
 export { effortLevelSchema, EFFORT_LEVELS } from './effort';
 export type { EffortLevel } from './effort';
@@ -160,6 +161,18 @@ export const nodeContextSchema = z.union([z.enum(['fresh', 'shared']), nodeConte
 
 export type NodeContext = z.infer<typeof nodeContextSchema>;
 
+/** Exact resolved model contract a guarded AI node must satisfy before a run starts. */
+export const modelGuardSchema = z
+  .object({
+    ref: z.union([z.string().startsWith('@'), z.enum(TIER_NAMES)]),
+    provider: z.string().trim().min(1),
+    model: z.string().trim().min(1),
+    effort: effortLevelSchema,
+  })
+  .strict();
+
+export type ModelGuard = z.infer<typeof modelGuardSchema>;
+
 export function isNodeContextResume(
   context: NodeContext | undefined
 ): context is { resume: string } {
@@ -183,6 +196,7 @@ export const dagNodeBaseSchema = z.object({
   when: z.string().optional(),
   trigger_rule: triggerRuleSchema.optional(),
   model: z.string().optional(),
+  model_guard: modelGuardSchema.optional(),
   provider: z.string().trim().min(1).optional(),
   context: nodeContextSchema.optional(),
   output_format: z.record(z.string(), z.unknown()).optional(),
@@ -476,6 +490,7 @@ function resolveScriptExecAuthoring({
 // authored projection and the ignored-field classification below.
 const loopAiAuthoringSchema = dagNodeBaseSchema.pick({
   model: true,
+  model_guard: true,
   provider: true,
   pi: true,
   allowed_tools: true,
@@ -1000,6 +1015,7 @@ export type DagNode =
 export const BASH_NODE_AI_FIELDS: readonly string[] = [
   'provider',
   'model',
+  'model_guard',
   'context',
   'allowed_tools',
   'denied_tools',
@@ -1773,6 +1789,7 @@ export const dagNodeSchema = z
     // Provider-call fields; each node mode selects the fields it supports.
     const aiOnly = {
       ...(data.model !== undefined ? { model: data.model } : {}),
+      ...(data.model_guard !== undefined ? { model_guard: data.model_guard } : {}),
       ...(data.provider !== undefined ? { provider: data.provider } : {}),
       ...(data.context !== undefined ? { context: data.context } : {}),
       ...(data.output_format !== undefined ? { output_format: data.output_format } : {}),

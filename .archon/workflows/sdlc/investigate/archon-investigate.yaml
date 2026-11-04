@@ -10,8 +10,9 @@ description: |
   this fail", "root-cause this before we fix it".
   NOT for: deciding how to build the fix (plan), or building it (implement).
 
-model: medium
 
+model_policy:
+  require_node_guards: true
 inputs:
   target:
     default: ""
@@ -31,6 +32,9 @@ nodes:
   # Inconclusive is a valid outcome, not a failure: the gaps named honestly beat a
   # confident guess. Consumers gate on the verdict before building on the chain.
   - id: investigate
+    model: large
+    effort: high
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: investigate
     # Advisory on both counts, and the engine holds both: it fails this node with
     # the touched paths named if the checkout is modified, and it refuses the

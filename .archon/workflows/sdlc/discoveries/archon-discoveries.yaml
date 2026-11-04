@@ -5,8 +5,9 @@ description: |
   Use after review or implementation records adjacent discoveries.
   Optional publication uses a command agent and gh after explicit authorization.
 
-model: medium
 interactive: true
+model_policy:
+  require_node_guards: true
 inputs:
   publication:
     default: preview
@@ -40,9 +41,11 @@ nodes:
       run_id: "$INPUTS.run_id"
 
   - id: revalidate
+    model: large
+    effort: high
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: revalidate
     mutates_checkout: false
-    model: medium
     allowed_tools: [Read, Grep, Glob, Bash]
     output_type: discovery-revalidation
     output_format:
@@ -85,9 +88,11 @@ nodes:
       revalidation: "$revalidate.output.entries"
 
   - id: search-existing
+    model: large
+    effort: high
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: search-existing
     mutates_checkout: false
-    model: medium
     allowed_tools: [Read, Grep, Glob, Bash]
     output_type: discovery-search
     output_format:
@@ -115,9 +120,11 @@ nodes:
     depends_on: [check-evidence]
 
   - id: classify
+    model: large
+    effort: high
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: classify
     mutates_checkout: false
-    model: medium
     allowed_tools: [Read]
     output_type: discovery-classification
     output_format:
@@ -177,6 +184,9 @@ nodes:
           label: Keep local
 
   - id: publish
+    model: large
+    effort: high
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: publish-discoveries
     context: fresh
     mutates_checkout: false

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { providerRegistry } from '@archon/providers';
 import { beforeAll, describe, expect, mock, test } from 'bun:test';
 import { registerBuiltinProviders, registerCommunityProviders } from '@archon/providers/in-process';
@@ -8,7 +10,7 @@ import type {
   IAgentProvider,
 } from '@archon/providers/types';
 import type { WorkflowConfig } from './deps';
-import type { WorkflowRun } from './schemas';
+import type { DagNode, WorkflowRun } from './schemas';
 import { makeTestResolvedWorkflow, makeTestComposedWorkflow, makeTestWorkflow } from './test-utils';
 import {
   prepareRunAiConfiguration,
@@ -74,6 +76,158 @@ function fixture(status: CredentialStatus = { state: 'not_checked', source: 'nat
 }
 
 describe('run credential preflight', () => {
+  const lunaTier = 'large';
+  const solTier = 'medium';
+  const missingAlias = '@missing-role';
+
+  function guardedWorkflow(ref: string, effort: 'medium' | 'high' = 'high') {
+    const expected =
+      ref === solTier
+        ? { provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' as const }
+        : { provider: 'codex', model: 'gpt-6-luna', effort: 'high' as const };
+    return makeTestResolvedWorkflow({
+      name: 'guarded',
+      model_policy: { require_node_guards: true },
+      nodes: [
+        {
+          id: 'ai',
+          command: 'test-command',
+          model: ref,
+          effort,
+          model_guard: { ref, ...expected },
+        },
+      ],
+    });
+  }
+
+  test('accepts the approved Luna High tier only when its resolved provider, model and effort match', async () => {
+    const { deps } = fixture();
+    deps.loadConfig.mockResolvedValue({
+      ...config,
+      assistant: 'codex',
+      tiers: {
+        large: { provider: 'codex', model: 'gpt-6-luna', effort: 'high' },
+      },
+    });
+    const prepared = await prepareRunAiConfiguration(deps, guardedWorkflow(lunaTier), '/p');
+    expect(prepared.requirements).toEqual([
+      { provider: 'codex', model: 'gpt-6-luna', vendor: 'openai' },
+    ]);
+  });
+
+  test('accepts the Sol Medium planning route', async () => {
+    const { deps } = fixture();
+    deps.loadConfig.mockResolvedValue({
+      ...config,
+      assistant: 'codex',
+      tiers: {
+        medium: { provider: 'codex', model: 'gpt-6.1-sol', effort: 'medium' },
+      },
+    });
+    const prepared = await prepareRunAiConfiguration(
+      deps,
+      guardedWorkflow(solTier, 'medium'),
+      '/p'
+    );
+    expect(prepared.requirements).toEqual([
+      { provider: 'codex', model: 'gpt-6.1-sol', vendor: 'openai' },
+    ]);
+  });
+
+  test('rejects a Luna mapping for backlog slicing before checking credentials', async () => {
+    const sourcePath = resolve(
+      import.meta.dir,
+      '../../../.archon/workflows/sdlc/backlog/archon-backlog.yaml'
+    );
+    const workflowDefinition = Bun.YAML.parse(readFileSync(sourcePath, 'utf8')) as {
+      nodes: DagNode[];
+    };
+    const slice = workflowDefinition.nodes.find(
+      node => node.id === 'slice' && 'command' in node && node.command === 'slice-backlog'
+    );
+    expect(slice).toBeDefined();
+    const workflow = makeTestResolvedWorkflow({
+      name: 'archon-backlog',
+      model_policy: { require_node_guards: true },
+      nodes: [{ ...slice!, depends_on: [] }],
+    });
+    const { deps, checkCredential } = fixture();
+    deps.loadConfig.mockResolvedValue({
+      ...config,
+      assistant: 'codex',
+      tiers: {
+        medium: { provider: 'codex', model: 'gpt-6-luna', effort: 'high' },
+        large: { provider: 'codex', model: 'gpt-6-luna', effort: 'high' },
+      },
+    });
+
+    await expect(prepareRunAiConfiguration(deps, workflow, '/p')).rejects.toThrow(
+      /configured medium resolves to codex\/gpt-6-luna at high; expected codex\/gpt-6\.1-sol at medium/
+    );
+    expect(checkCredential).not.toHaveBeenCalled();
+  });
+
+  test('fails before credential checks when a guarded alias is missing', async () => {
+    const { deps, checkCredential } = fixture();
+    deps.loadConfig.mockResolvedValue({ ...config, assistant: 'codex', aliases: {} });
+    await expect(
+      prepareRunAiConfiguration(deps, guardedWorkflow(missingAlias), '/p')
+    ).rejects.toThrow(/Model routing preflight failed.*Unknown alias '@missing-role'/);
+    expect(checkCredential).not.toHaveBeenCalled();
+  });
+
+  test('rejects an unexpected Astra resolution before credential checks', async () => {
+    const { deps, checkCredential } = fixture();
+    deps.loadConfig.mockResolvedValue({
+      ...config,
+      assistant: 'codex',
+      tiers: {
+        large: { provider: 'codex', model: 'gpt-6-astra', effort: 'high' as const },
+      },
+    });
+    await expect(prepareRunAiConfiguration(deps, guardedWorkflow(lunaTier), '/p')).rejects.toThrow(
+      /configured large resolves to codex\/gpt-6-astra at high; expected codex\/gpt-6-luna at high/
+    );
+    expect(checkCredential).not.toHaveBeenCalled();
+  });
+
+  test('rejects a higher-precedence user tier override that violates the route', async () => {
+    const { deps, checkCredential } = fixture();
+    deps.loadConfig.mockResolvedValue({
+      ...config,
+      assistant: 'codex',
+      tiers: {
+        large: { provider: 'codex', model: 'gpt-6-luna', effort: 'high' },
+      },
+    });
+    const getUserAiPrefs = mock(async () => ({
+      tiers: {
+        large: { provider: 'codex', model: 'gpt-6-astra', effort: 'high' as const },
+      },
+    }));
+    await expect(
+      prepareRunAiConfiguration({ ...deps, getUserAiPrefs }, guardedWorkflow(lunaTier), '/p', {
+        userId: 'user',
+      })
+    ).rejects.toThrow(/configured large resolves to codex\/gpt-6-astra at high/);
+    expect(checkCredential).not.toHaveBeenCalled();
+  });
+
+  test('rejects a model effort mismatch rather than silently changing reasoning depth', async () => {
+    const { deps, checkCredential } = fixture();
+    deps.loadConfig.mockResolvedValue({
+      ...config,
+      assistant: 'codex',
+      tiers: {
+        large: { provider: 'codex', model: 'gpt-6-luna', effort: 'medium' },
+      },
+    });
+    await expect(prepareRunAiConfiguration(deps, guardedWorkflow(lunaTier), '/p')).rejects.toThrow(
+      /configured large resolves to codex\/gpt-6-luna at medium; expected codex\/gpt-6-luna at high/
+    );
+    expect(checkCredential).not.toHaveBeenCalled();
+  });
+
   test('enumerates actual aliases, loop scopes and conditional nodes, excluding coordination nodes', async () => {
     const workflow = makeTestResolvedWorkflow({
       name: 'graph',

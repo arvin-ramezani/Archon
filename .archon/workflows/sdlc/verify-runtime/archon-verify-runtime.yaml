@@ -3,8 +3,9 @@ description: >-
   Exercise a live target against project-declared assertions. Validate report
   structure and target identity, then return verified, failed, or inconclusive.
   Malformed reports get one fresh attempt. Requires external environment ownership.
-model: medium
 mutates_checkout: false
+model_policy:
+  require_node_guards: true
 inputs:
   scenario:
     default: ''
@@ -99,6 +100,9 @@ nodes:
             required: [path]
 
         - id: verify
+          model: large
+          effort: high
+          model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
           command: verify-runtime
           depends_on: [capture-helper]
           when: '$start-run.output.ok == true'

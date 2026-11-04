@@ -21,6 +21,8 @@ description: |
   stage and owns what follows its ending. It never pauses for a person: run
   archon-deliver, which adds that pause, by hand.
 
+model_policy:
+  require_node_guards: true
 inputs:
   pull_request:
     default: ""
@@ -232,8 +234,10 @@ nodes:
         # judged the threads the previous round read; this agent checks each
         # disposition at the head and writes the reply each settled thread gets.
         - id: settle-threads
+          model: large
+          effort: high
+          model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
           command: settle-threads
-          model: medium
           context: fresh
           mutates_checkout: false
           depends_on: [pr, review, rereview]
@@ -259,8 +263,10 @@ nodes:
         # CI is the project's full validation: implementers run only focused checks.
         # Fresh: CI reads the PR, not simplify's or reshape's conversation.
         - id: ci
+          model: large
+          effort: high
+          model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
           command: ci
-          model: medium
           context: fresh
           mutates_checkout: false
           # After settle-threads: a failed settle skips CI, so the pull request the
@@ -352,8 +358,10 @@ nodes:
   # only when nothing is left. It runs once the rounds have ended, never per round;
   # content a round prepared for the description is that round's pr step's write.
   - id: update-pr-body
+    model: large
+    effort: high
+    model_guard: { ref: large, provider: codex, model: gpt-6-luna, effort: high }
     command: update-pr-body
-    model: medium
     depends_on: [rounds]
     when: "$rounds.output.pr_url != ''"
     with:
